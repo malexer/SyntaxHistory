@@ -1,0 +1,6 @@
+Version 1.0.1
+~~~~~~~~~~~~~
+
+Fixed:
+
+* Minor issue with changelog path.
