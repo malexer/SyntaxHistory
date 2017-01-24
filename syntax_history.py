@@ -1,10 +1,13 @@
-from collections import UserDict
+from collections import OrderedDict, UserDict
 
 import sublime
 import sublime_plugin
 
 
-SYNTAX_HISTORY_FILE = 'SyntaxHistory.sublime-settings'
+# max count of history items to keep
+HISTORY_MAX_SIZE = 1000
+
+HISTORY_FILE = 'SyntaxHistory.sublime-settings'
 
 
 def syntax_exists(package_based_path):
@@ -34,15 +37,10 @@ class History(UserDict):
     file.
     """
 
-    def __init__(self, history_filename):
+    def __init__(self, history_filename, max_items=1000):
         self.filename = history_filename
-        self.settings = sublime.load_settings(history_filename)
-
-        initial_data = {}
-        if self.settings.has('history'):
-            initial_data = self.settings.get('history')
-
-        super().__init__(initial_data)
+        self.max_items = max_items
+        self.load()
 
     def __delitem__(self, key):
         super().__delitem__(key)
@@ -52,8 +50,23 @@ class History(UserDict):
         super().__setitem__(key, value)
         self.save()
 
+    def apply_size_limit(self):
+        while len(self.data) > self.max_items:
+            self.data.popitem(last=False)
+
+    def load(self):
+        self.settings = sublime.load_settings(self.filename)
+        data = self.settings.get('history', [])
+
+        if isinstance(data, dict):  # support loading old config
+            data = list(data.items())
+
+        self.data = OrderedDict(data)
+
     def save(self):
-        self.settings.set('history', self.data)
+        self.apply_size_limit()
+
+        self.settings.set('history', list(self.data.items()))
         sublime.save_settings(self.filename)
 
 
@@ -65,12 +78,12 @@ class SyntaxHistoryEventListener(sublime_plugin.EventListener):
             if syntax:
                 filename = view.file_name()
                 if filename is not None:
-                    history = History(SYNTAX_HISTORY_FILE)
+                    history = History(HISTORY_FILE, max_items=HISTORY_MAX_SIZE)
                     history[filename] = syntax
 
     def on_load_async(self, view):
         filename = view.file_name()
-        history = History(SYNTAX_HISTORY_FILE)
+        history = History(HISTORY_FILE, max_items=HISTORY_MAX_SIZE)
 
         if filename in history:
             syntax = history[filename]

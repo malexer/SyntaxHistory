@@ -1,0 +1,8 @@
+Version 1.1.0
+~~~~~~~~~~~~~
+
+Added:
+
+* Limit max count of history items to 1000 to avoid having list
+  constantly growing. The oldest added item will be dropped in this
+  case.
