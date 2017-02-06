@@ -1,5 +1,7 @@
 # Syntax History
 
+[![build](https://travis-ci.org/malexer/SyntaxHistory.svg?branch=master)](https://travis-ci.org/malexer/SyntaxHistory)
+
 Syntax History is a plugin for Sublime Text 3 which stores the history
 of syntax used for files and apply it when files are reopened.
 
