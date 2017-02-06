@@ -46,6 +46,10 @@ class History(UserDict):
         super().__delitem__(key)
         self.save()
 
+    def __getitem__(self, key):
+        self.data.move_to_end(key)  # LRU logic
+        return super().__getitem__(key)
+
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         self.save()

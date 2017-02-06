@@ -1,0 +1,7 @@
+Version 1.1.1
+~~~~~~~~~~~~~
+
+Added:
+
+* Track history items in least-recently-used order. The oldest items by
+  access will be dropped first.
