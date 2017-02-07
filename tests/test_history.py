@@ -30,6 +30,7 @@ def sublime_settings():
 def history(sublime_settings):
     from syntax_history import History
 
+    sublime.save_settings.reset_mock()
     return History(history_filename='HISTORY_FILENAME', max_items=4)
 
 
@@ -39,7 +40,7 @@ class TestHistory(object):
         sublime.load_settings.assert_called_with('HISTORY_FILENAME')
         assert list(history.data.items()) == DEFAULT_DATA
 
-    def test_add_item_and_save(self, sublime_settings, history):
+    def test_add_item_and_save(self, history):
         history['f4'] = 's4'
 
         expected_stored_items = [
@@ -50,12 +51,12 @@ class TestHistory(object):
         ]
 
         assert list(history.data.items()) == expected_stored_items
-        sublime_settings.set.assert_called_with(
+        history.settings.set.assert_called_with(
             'history', expected_stored_items)
 
         sublime.save_settings.assert_called_with('HISTORY_FILENAME')
 
-    def test_del_item_and_save(self, sublime_settings, history):
+    def test_del_item_and_save(self, history):
         del history['f2']
 
         expected_stored_items = [
@@ -64,12 +65,12 @@ class TestHistory(object):
         ]
 
         assert list(history.data.items()) == expected_stored_items
-        sublime_settings.set.assert_called_with(
+        history.settings.set.assert_called_with(
             'history', expected_stored_items)
 
         sublime.save_settings.assert_called_with('HISTORY_FILENAME')
 
-    def test_size_limit(self, sublime_settings, history):
+    def test_size_limit(self, history):
         history['f4'] = 's4'
         assert list(history.data.items()) == [
             ('f1', 's1'), ('f2', 's2'), ('f3', 's3'), ('f4', 's4')]
@@ -82,7 +83,7 @@ class TestHistory(object):
         assert list(history.data.items()) == [
             ('f3', 's3'), ('f4', 's4'), ('f5', 's5'), ('f6', 's6')]
 
-    def test_size_limit_with_lru_logic(self, sublime_settings, history):
+    def test_size_limit_with_lru_logic(self, history):
         'f2' in history  # should not change order
         assert list(history.data.items()) == [
             ('f1', 's1'), ('f2', 's2'), ('f3', 's3')]
@@ -115,3 +116,24 @@ class TestHistory(object):
         history['f7'] = 's7'
         assert list(history.data.items()) == [
             ('f5', 's5'), ('f1', 's1'), ('f6', 's6'), ('f7', 's7')]
+
+    def test_save_on_get_item(self, history):
+        history['f2']
+
+        expected_stored_items = [
+            ('f1', 's1'),
+            ('f3', 's3'),
+            ('f2', 's2'),
+        ]
+
+        assert list(history.data.items()) == expected_stored_items
+        history.settings.set.assert_called_with(
+            'history', expected_stored_items)
+
+        sublime.save_settings.assert_called_with('HISTORY_FILENAME')
+
+    def test_not_save_on_in_check(self, history):
+        'f2' in history
+
+        assert not history.settings.set.called
+        assert not sublime.save_settings.called
